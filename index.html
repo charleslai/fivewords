@@ -1,18 +1,79 @@
 <!DOCTYPE html>
 <html lang="">
-	<head>
-		<meta charset="utf-8">
-		<meta http-equiv="X-UA-Compatible" content="IE=edge">
-		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<title>Five Word Stories</title>
-		<!-- Bootstrap CSS via CDN -->
-		<link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
-	</head>
-	<body>
-		<h1 class="text-center">Hello World</h1>
-
-		<!-- JS Libraries and Scripts -->
-		<script src="//code.jquery.com/jquery.js"></script>
-		<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
-	</body>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Five Word Stories</title>
+    <link rel="stylesheet" type="text/css" href="custom.css">
+    <!-- JS Libraries and Scripts -->
+    <script src="script.js"></script>
+    <script src='https://cdn.firebase.com/js/client/1.0.15/firebase.js'></script>
+    <script src='https://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js'></script>
+  </head>
+  <body>
+    <h1 class="centered heading">Five Word Story</h1>
+    <div class="container">
+      <div class="row">
+        <div class="grid-1"></div>
+        <div class="grid-4">
+          <div id='story'></div>
+          <div id='temp_text' class="gray-font"></div>
+          <input type='text' id='input' placeholder='Input'>
+          <div id = 'error' class="red-font"></div>
+        </div> 
+        <div class="grid-1"></div>
+      </div>
+    </div>
+    <script>
+      // Open Firebase references
+      var db = new Firebase("https://glaring-heat-6915.firebaseio.com/");
+      var main_ref = db.child("main")
+      var temp_ref = db.child("temp")
+      $('#input').keyup(function (e) {
+        // If the enter key is pressed, update the main story
+        if (e.keyCode == 13) {
+          var text = $('#input').val();
+          text = text.trim();
+          // Enforce word count
+          var word_count = text.split(" ").length;
+          if (word_count > 5){
+            $('#error').text("You cannot type more than five words.")
+            return
+          }
+          // Append a space to keep story formatting consistent
+          text = text + " ";
+          // TODO: Sanitize JS/HTML/Spaces
+          main_ref.push({text: text});
+          $('#error').text('');
+          $('#input').val('');
+        }
+        // Else, display what is currently being typed
+        else {
+          var text = $('#input').val();
+          temp_ref.child("current_message").set({text: text});
+        }
+      });
+      // Main story update callback function
+      main_ref.on('child_added', function(snapshot) {
+        var message = snapshot.val();
+        display_story(message.text);
+      });
+      // Current message callback function
+      temp_ref.on('child_changed', function(snapshot) {
+        var message = snapshot.val();
+        display_current(message.text);
+      });
+      // Display main story
+      function display_story(text) {
+        $('<span/>').text(text).appendTo($('#story'));
+        $('#story')[0].scrollTop = $('#story')[0].scrollHeight;
+      };
+      // Display current message
+      function display_current(text) {
+        $('#temp_text').text(text);
+        $('#temp_text')[0].scrollTop = $('#temp_text')[0].scrollHeight;
+      }
+    </script>
+  </body>
 </html>
